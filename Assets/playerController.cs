@@ -11,7 +11,10 @@ public class playerController : MonoBehaviour
     public InputAction special;
 
     public float speed;
+    public float dashSpeed;
+    public float jumpSpeed;
     public float jumpForce;
+    public float airDrift;
 
     private float moveInput;
 
@@ -20,29 +23,51 @@ public class playerController : MonoBehaviour
     private bool isGrounded;
     private bool isJumping;
     private bool isAttacking;
+    public bool isHoldDown;
 
     private Animator anim;
 
-    public Transform groundCheck;
     public float checkRadius;
     public LayerMask whatIsGround;
 
     public int extraJumps;
     private int extraJumpsValue;
 
+    private void MoveStarted(InputAction.CallbackContext context)
+    {
+        Vector2 moveInput = context.ReadValue<Vector2>();
+        if(isGrounded) rb.AddForce(new Vector3(moveInput.x * dashSpeed, 0, rb.velocity.z));
+        else {
+            if(extraJumpsValue > 0)
+            {
+                rb.velocity = new Vector3(moveInput.x, 0, rb.velocity.z);
+                extraJumpsValue--;
+            }
+        }
+        
+    }
+    
     private void MovePerformed(InputAction.CallbackContext context)
     {
         Vector2 moveInput = context.ReadValue<Vector2>();
-        rb.velocity = new Vector3(moveInput.x * speed, moveInput.y * speed, rb.velocity.y);
+        if(isGrounded){
+            rb.velocity = new Vector3(moveInput.x * speed, rb.velocity.y, rb.velocity.z);
+        }
+        else {
+            rb.velocity = new Vector3(moveInput.x * airDrift, rb.velocity.y, rb.velocity.z);
+        }
+        if(moveInput.y < 0) isHoldDown = true;
+        else isHoldDown = false;
     }
 
     private void MoveCanceled(InputAction.CallbackContext context)
     {
-
+        isHoldDown = false;
     }
+
     private void SmashPerformed(InputAction.CallbackContext context)
     {
-        Debug.Log("Smash");
+        
     }
 
     private void SmashCanceled(InputAction.CallbackContext context)
@@ -65,6 +90,7 @@ public class playerController : MonoBehaviour
         playerActions = GetComponent<PlayerInput>();
 
         move = playerActions.actions.FindAction("Move", true);
+        move.started += MoveStarted;
         move.performed += MovePerformed;
         move.canceled += MoveCanceled;
 
@@ -75,7 +101,7 @@ public class playerController : MonoBehaviour
         special.canceled += SpecialCanceled;
 
         rb = GetComponent<Rigidbody>();
-        anim = GetComponent<Animator>();
+        //anim = GetComponent<Animator>();
 
         extraJumpsValue = extraJumps;
     }
@@ -101,11 +127,16 @@ public class playerController : MonoBehaviour
 
     void FixedUpdate()
     {
+        isGrounded = Physics.CheckSphere(rb.position, checkRadius, whatIsGround);
+        Debug.Log(Physics.CheckSphere(rb.position, checkRadius, whatIsGround));
 
+        if(isGrounded == true)
+        {
+            extraJumpsValue = extraJumps;
+        }
     }
 
     void Update()
     {
-
     }
 }

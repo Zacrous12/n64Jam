@@ -10,15 +10,15 @@ public class mainCamera : MonoBehaviour
     void Start()
     {
         player = GameObject.Find("Player");
-        smoothing = 0.125f;
+        smoothing = 0.015f;
         transform.position = new Vector3(player.transform.position.x, player.transform.position.y + 5, -7);
     }
 
     // Update is called once per frame
-    void Update()
+    void FixedUpdate()
     {
-        float tempX = (player.transform.position.x - transform.position.x) * .1f;
-        float tempY = (player.transform.position.y - transform.position.y) * .1f;
-        transform.position = new Vector3(tempX, tempY + 5, -7);
+        // Make the camera lerp less jittery
+        Vector3 targetPosition = new Vector3(player.transform.position.x, player.transform.position.y + 5.0f, -7);
+        transform.position = Vector3.Lerp(transform.position, targetPosition, smoothing);
     }
 }

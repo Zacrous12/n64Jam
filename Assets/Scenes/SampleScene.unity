@@ -135,9 +135,9 @@ GameObject:
   - component: {fileID: 206703230}
   - component: {fileID: 206703229}
   - component: {fileID: 206703228}
-  m_Layer: 0
+  m_Layer: 3
   m_Name: Platform
-  m_TagString: Untagged
+  m_TagString: Ground
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -275,9 +275,10 @@ GameObject:
   - component: {fileID: 468354105}
   - component: {fileID: 468354104}
   - component: {fileID: 468354103}
-  m_Layer: 0
-  m_Name: Platform
-  m_TagString: Untagged
+  - component: {fileID: 468354106}
+  m_Layer: 3
+  m_Name: fallThruPlat
+  m_TagString: Ground
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -338,7 +339,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 10303, guid: 0000000000000000f000000000000000, type: 0}
+  - {fileID: 10754, guid: 0000000000000000f000000000000000, type: 0}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -368,6 +369,22 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 468354101}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!114 &468354106
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 468354101}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1a9ee02478af00b40beb05d486c25af9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  entryDirection: {x: 0, y: 1, z: 0}
+  localDirection: 0
+  triggerScale: {x: 1.25, y: 1.25, z: 1.25}
+  penetrationDepthThreshold: 0.2
 --- !u!1 &671965089
 GameObject:
   m_ObjectHideFlags: 0
@@ -380,9 +397,9 @@ GameObject:
   - component: {fileID: 671965093}
   - component: {fileID: 671965092}
   - component: {fileID: 671965091}
-  m_Layer: 0
+  m_Layer: 3
   m_Name: StagePlatform
-  m_TagString: Untagged
+  m_TagString: Ground
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -737,13 +754,16 @@ MonoBehaviour:
     m_SingletonActionBindings: []
     m_Flags: 0
   speed: 10
-  jumpForce: 0
-  groundCheck: {fileID: 0}
-  checkRadius: 0
+  dashSpeed: 15
+  jumpSpeed: 7
+  jumpForce: 10
+  airDrift: 5
+  isHoldDown: 0
+  checkRadius: 2.5
   whatIsGround:
     serializedVersion: 2
     m_Bits: 0
-  extraJumps: 0
+  extraJumps: 1
 --- !u!136 &2018461743
 CapsuleCollider:
   m_ObjectHideFlags: 0
@@ -887,7 +907,7 @@ Rigidbody:
   m_UseGravity: 1
   m_IsKinematic: 0
   m_Interpolate: 0
-  m_Constraints: 72
+  m_Constraints: 120
   m_CollisionDetection: 0
 --- !u!1 &2021519262
 GameObject:
@@ -901,9 +921,9 @@ GameObject:
   - component: {fileID: 2021519266}
   - component: {fileID: 2021519265}
   - component: {fileID: 2021519264}
-  m_Layer: 0
+  m_Layer: 3
   m_Name: Platform
-  m_TagString: Untagged
+  m_TagString: Ground
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0

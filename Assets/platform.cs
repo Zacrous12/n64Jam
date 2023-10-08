@@ -32,7 +32,6 @@ public class platform : MonoBehaviour
     {
         collider = GetComponent<BoxCollider>();
         playerController = GameObject.Find("Player").GetComponent<playerController>();
-        whatIsGround = LayerMask.GetMask("Ground");
 
         // Adding the BoxCollider and making sure that its sizes match the ones
         // of the OG collider.

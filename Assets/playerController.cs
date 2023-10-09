@@ -7,6 +7,7 @@ public class playerController : MonoBehaviour
 {
     public float speed;
     public float dashSpeed;
+    public float maxSpeed;
     public int dashTimer;
     public float dodgeSpeed;
     private int dodgeTimer;
@@ -14,7 +15,11 @@ public class playerController : MonoBehaviour
     public int jumpTimer;
     private float jumpModifier;
     public float airDrift;
+    public float maxAirDrift;
+    public float wellDrift;
     public float gravity;
+    public float maxWellGravity;
+    public int gravTimer;
 
     private Rigidbody rb;
 
@@ -25,7 +30,10 @@ public class playerController : MonoBehaviour
     private bool readyToDash;
     private bool isCrouching;
     private bool isDodging;
+    private bool inWell;
     public bool isHoldDown;
+    private bool outOfWell;
+    private bool nearWell;
 
     private Animator anim;
 
@@ -34,6 +42,11 @@ public class playerController : MonoBehaviour
 
     public int extraJumps;
     private int extraJumpsValue;
+
+    // Gravity related variables
+    public float distFromWell;
+    public float wellGravity;
+    private GameObject[] wells;
 
     private void HandleMove(bool right)
     {
@@ -96,7 +109,6 @@ public class playerController : MonoBehaviour
 
     private void HandleDodge()
     {
-        Debug.Log("Dodge");
         if(isGrounded)
         {
             //BLOCK
@@ -136,6 +148,11 @@ public class playerController : MonoBehaviour
         isDodging = false;
         readyToDash = true;
         extraJumpsValue = extraJumps;
+
+        outOfWell = true;
+        nearWell = false;
+        wells = GameObject.FindGameObjectsWithTag("Well");
+        Debug.Log(wells);
     }
 
     void Start()
@@ -183,9 +200,43 @@ public class playerController : MonoBehaviour
             extraJumpsValue = extraJumps;
             jumpModifier = .75f;
             isDodging = false;
+            outOfWell = true; // change where this is
         }
 
-        if(speed > 4) speed -= .1f; 
+        if(nearWell) airDrift = wellDrift;
+        else airDrift = maxAirDrift;
+
+        if(speed > maxSpeed) speed -= .1f; 
+         
+        nearWell = false;
+
+        for(int i = 0; i < wells.Length; i++)
+        {
+            bool isWellActive = wells[i].GetComponent<Well>().isActive;
+            if((Vector3.Distance(wells[i].transform.position, transform.position) < distFromWell) && outOfWell && isWellActive) {
+                rb.velocity += wellGravity * Time.fixedTime * (wells[i].transform.position - transform.position);
+                inWell = true;
+                nearWell = true;
+                gravTimer++;
+
+                if((Vector3.Distance(wells[i].transform.position, transform.position) < (distFromWell * 0.5f))) 
+                {
+                    wellGravity = 0;
+                    outOfWell = false;
+                    wells[i].GetComponent<Well>().Deactivate();
+                    Debug.Log("Deactivated");
+                }
+                else wellGravity = maxWellGravity;
+            } 
+            else if(!nearWell) inWell = false;
+
+
+            if(gravTimer > 30)
+            {
+                outOfWell = false;
+                gravTimer = 0;
+            }
+        }
 
         rb.AddForce(new Vector3(0, gravity, 0));
     }

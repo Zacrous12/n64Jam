@@ -20,7 +20,7 @@ public class Well : MonoBehaviour
             mr.enabled = false;
             timeLastActive++;
         }
-        if(timeLastActive > 100){
+        if(timeLastActive > 200){
             isActive = true;
             timeLastActive = 0;
             mr.enabled = true;

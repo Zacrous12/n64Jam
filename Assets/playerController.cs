@@ -20,8 +20,11 @@ public class playerController : MonoBehaviour
     public float gravity;
     public float maxWellGravity;
     public int gravTimer;
+    public int activeTimer;
 
     private Rigidbody rb;
+    private ParticleSystem ps;
+    private Transform psObj;
 
     private bool isGrounded;
     private bool isJumping;
@@ -31,6 +34,7 @@ public class playerController : MonoBehaviour
     private bool isCrouching;
     private bool isDodging;
     private bool inWell;
+    private bool facingRight;
     public bool isHoldDown;
     private bool outOfWell;
     private bool nearWell;
@@ -57,6 +61,7 @@ public class playerController : MonoBehaviour
                 speed = dashSpeed;
                 isDashing = true;
                 readyToDash = false;
+                ps.Play();
             }
             if(right) rb.velocity = (new Vector3(speed, rb.velocity.y, 0));
             else rb.velocity = (new Vector3(-speed, rb.velocity.y, 0));
@@ -107,6 +112,20 @@ public class playerController : MonoBehaviour
 
     }
 
+    IEnumerator lagDodge()
+    {
+        RaycastHit hit;
+        bool part = false;
+        yield return new WaitForSeconds(0.1f);
+        if(Physics.Raycast(rb.position + new Vector3(0,-2.0f,0), transform.TransformDirection(Vector3.down), out hit, checkRadius, whatIsGround)) part = true;
+        if(Physics.Raycast(rb.position + new Vector3(0,-1.0f,0), transform.TransformDirection(Vector3.up), out hit, checkRadius * 2, whatIsGround) || (rb.position.y < 1.0f)) part = true;
+        if(part) yield break;
+        rb.velocity = new Vector3(0, 0, 0);
+        rb.constraints = RigidbodyConstraints.FreezePosition;
+        yield return new WaitForSeconds(0.4f);
+        rb.constraints = RigidbodyConstraints.FreezePositionZ | RigidbodyConstraints.FreezeRotation;
+    }
+
     private void HandleDodge()
     {
         if(isGrounded)
@@ -119,27 +138,35 @@ public class playerController : MonoBehaviour
             // TODO: Make invincible
             if(Input.GetKey(KeyCode.D))
             {
-                if(Input.GetKey(KeyCode.W)) rb.AddForce(new Vector3(dodgeSpeed, dodgeSpeed, rb.velocity.z), ForceMode.Impulse);
-                else if(Input.GetKey(KeyCode.S)) rb.AddForce(new Vector3(dodgeSpeed, -dodgeSpeed, rb.velocity.z), ForceMode.Impulse);
-                else rb.AddForce(new Vector3(dodgeSpeed, rb.velocity.y, rb.velocity.z), ForceMode.Impulse);
+                if(Input.GetKey(KeyCode.W)) rb.velocity += (new Vector3(dodgeSpeed, dodgeSpeed, 0));
+                else if(Input.GetKey(KeyCode.S)) rb.velocity += (new Vector3(dodgeSpeed, -dodgeSpeed, 0));
+                else rb.velocity += (new Vector3(dodgeSpeed * 2, 0, 0));
             }
             else if(Input.GetKey(KeyCode.A))
             {
-                if(Input.GetKey(KeyCode.W)) rb.AddForce(new Vector3(-dodgeSpeed, dodgeSpeed, rb.velocity.z), ForceMode.Impulse);
-                else if(Input.GetKey(KeyCode.S)) rb.AddForce(new Vector3(-dodgeSpeed, -dodgeSpeed, rb.velocity.z), ForceMode.Impulse);
-                else rb.AddForce(new Vector3(-dodgeSpeed, rb.velocity.y, rb.velocity.z), ForceMode.Impulse);
+                if(Input.GetKey(KeyCode.W)) rb.velocity += (new Vector3(-dodgeSpeed, dodgeSpeed, 0));
+                else if(Input.GetKey(KeyCode.S)) rb.velocity += (new Vector3(-dodgeSpeed, -dodgeSpeed, 0));
+                else rb.velocity += (new Vector3(-dodgeSpeed * 2, 0, 0));
             }
             else if(Input.GetKey(KeyCode.W))
             {
-                rb.AddForce(new Vector3(rb.velocity.x, dodgeSpeed, rb.velocity.z), ForceMode.Impulse);
+                rb.velocity += (new Vector3(0, dodgeSpeed, 0));
+            }
+            else if(Input.GetKey(KeyCode.S))
+            {
+                rb.velocity += (new Vector3(0, -dodgeSpeed, 0));
             }
             isDodging = true;
+            ps.Play();
+            StartCoroutine(lagDodge());
         }
     }
 
     void Awake()
     {
         whatIsGround = LayerMask.GetMask("Ground");
+        ps = GetComponentInChildren<ParticleSystem>();
+        psObj = GetComponentInChildren<Transform>();
 
         rb = GetComponent<Rigidbody>();
         //anim = GetComponent<Animator>();
@@ -188,7 +215,7 @@ public class playerController : MonoBehaviour
         if(isDodging)
         {
             dodgeTimer++;
-            if(dodgeTimer > 20)
+            if(dodgeTimer > 120)
             {
                 isDodging = false;
                 dodgeTimer = 0;
@@ -213,32 +240,32 @@ public class playerController : MonoBehaviour
         for(int i = 0; i < wells.Length; i++)
         {
             bool isWellActive = wells[i].GetComponent<Well>().isActive;
-            if((Vector3.Distance(wells[i].transform.position, transform.position) < distFromWell) && outOfWell && isWellActive) {
+            if((Vector3.Distance(wells[i].transform.position, transform.position) < distFromWell) && isWellActive) {
                 rb.velocity += wellGravity * Time.fixedTime * (wells[i].transform.position - transform.position);
                 inWell = true;
                 nearWell = true;
                 gravTimer++;
-
-                if((Vector3.Distance(wells[i].transform.position, transform.position) < (distFromWell * 0.5f))) 
-                {
-                    wellGravity = 0;
-                    outOfWell = false;
-                    wells[i].GetComponent<Well>().Deactivate();
-                    Debug.Log("Deactivated");
-                }
-                else wellGravity = maxWellGravity;
             } 
             else if(!nearWell) inWell = false;
 
+            if((Vector3.Distance(wells[i].transform.position, transform.position) < (distFromWell * 0.5f))) 
+            {
+                wellGravity = 0;
+                outOfWell = false;
+                nearWell = true;
+                wells[i].GetComponent<Well>().Deactivate();
+            }
+            else wellGravity = maxWellGravity;
 
-            if(gravTimer > 30)
+            if(gravTimer > activeTimer)
             {
                 outOfWell = false;
                 gravTimer = 0;
+                wells[i].GetComponent<Well>().Deactivate();
             }
         }
 
-        rb.AddForce(new Vector3(0, gravity, 0));
+        if(!isDodging) rb.AddForce(new Vector3(0, gravity, 0));
     }
 
     void Update()
@@ -250,6 +277,15 @@ public class playerController : MonoBehaviour
         else if(Input.GetKey(KeyCode.A))
         {
             HandleMove(false);
+        }
+
+        if(Input.GetKeyDown(KeyCode.D)) {
+            if(facingRight == false) psObj.Rotate(0,180,0);
+            facingRight = true;
+        }
+        else if(Input.GetKeyDown(KeyCode.A)) {
+            if(facingRight == true) psObj.Rotate(0,-180,0);
+            facingRight = false;
         }
 
         if(Input.GetKeyUp(KeyCode.D) || Input.GetKeyUp(KeyCode.A))

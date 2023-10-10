@@ -34,8 +34,8 @@ public class Well : MonoBehaviour
             isActive = true;
             timeLastActive = 0;
         }
-        if(mr.material.color.a <= 0) mr.SetActive(false);
-        else mr.SetActive(true);
+        // if(mr.material.color.a <= 0) mr.SetActive(false);
+        // else mr.SetActive(true);
 
         transform.position = startPos;
         transform.RotateAround(Vector3.zero, Vector3.up, 20 * Time.deltaTime);

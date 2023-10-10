@@ -6,9 +6,14 @@ public class mainCamera : MonoBehaviour
 {
     public GameObject player;
     public float smoothing;
+    private GameObject[] chars;
+    private int currentChar;
+    private int numChars;
 
     void Start()
     {
+        numChars = 2;
+        currentChar = 0;
         player = GameObject.Find("Player");
         smoothing = 0.015f;
         transform.position = new Vector3(player.transform.position.x, player.transform.position.y + 5, -7);

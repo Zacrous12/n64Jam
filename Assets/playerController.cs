@@ -24,7 +24,9 @@ public class playerController : MonoBehaviour
 
     private Rigidbody rb;
     private ParticleSystem ps;
+    private ParticleSystem trans;
     private Transform psObj;
+    private mainCamera cam;
 
     private bool isGrounded;
     private bool isJumping;
@@ -165,9 +167,11 @@ public class playerController : MonoBehaviour
     void Awake()
     {
         whatIsGround = LayerMask.GetMask("Ground");
+
+        trans = GameObject.Find("trans").GetComponent<ParticleSystem>();
         ps = GetComponentInChildren<ParticleSystem>();
         psObj = GetComponentInChildren<Transform>();
-
+        cam = GameObject.Find("Main Camera").GetComponent<mainCamera>();
         rb = GetComponent<Rigidbody>();
         //anim = GetComponent<Animator>();
 
@@ -179,12 +183,11 @@ public class playerController : MonoBehaviour
         outOfWell = true;
         nearWell = false;
         wells = GameObject.FindGameObjectsWithTag("Well");
-        Debug.Log(wells);
     }
 
     void Start()
     {
-
+        trans.Play();
     }
 
     void FixedUpdate()
@@ -226,6 +229,7 @@ public class playerController : MonoBehaviour
         {
             extraJumpsValue = extraJumps;
             jumpModifier = .75f;
+            gravTimer = 0;
             isDodging = false;
             outOfWell = true; // change where this is
         }
@@ -248,19 +252,21 @@ public class playerController : MonoBehaviour
             } 
             else if(!nearWell) inWell = false;
 
-            if((Vector3.Distance(wells[i].transform.position, transform.position) < (distFromWell * 0.5f))) 
-            {
-                wellGravity = 0;
-                outOfWell = false;
-                nearWell = true;
-                wells[i].GetComponent<Well>().Deactivate();
-            }
-            else wellGravity = maxWellGravity;
+            // if((Vector3.Distance(wells[i].transform.position, transform.position) < (distFromWell * 0.5f))) 
+            // {
+            //     wellGravity = 0;
+            //     outOfWell = false;
+            //     nearWell = true;
+            //     wells[i].GetComponent<Well>().Deactivate();
+            // }
+            // else wellGravity = maxWellGravity;
 
             if(gravTimer > activeTimer)
             {
+                wellGravity = 0;
                 outOfWell = false;
                 gravTimer = 0;
+                nearWell = true;
                 wells[i].GetComponent<Well>().Deactivate();
             }
         }
@@ -318,6 +324,33 @@ public class playerController : MonoBehaviour
         if(Input.GetKey(KeyCode.K))
         {
             SpecialPerformed();
+        }
+
+        if(Input.GetKeyDown(KeyCode.U))
+        {
+            if(this.gameObject.name == "Player" || this.gameObject.name == "Player(Clone)")
+            {
+                Instantiate(Resources.Load<GameObject>("Ghost"), transform.position, transform.rotation);
+                cam.player = GameObject.Find("Ghost(Clone)");
+            } 
+            else
+            {
+                Instantiate(Resources.Load<GameObject>("Player"), transform.position, transform.rotation);
+                cam.player = GameObject.Find("Player(Clone)");
+            }
+            Destroy(this.gameObject);
+
+            // When we have multiple characters
+            // for(int i = 0; i < charList.Length; i++)
+            // {
+            //     if(charList[i].active == true)
+            //     {
+            //         charList[i].SetActive(false);
+            //         if(i == charList.Length - 1) charList[0].SetActive(true);
+            //         else charList[i + 1].SetActive(true);
+            //         break;
+            //     }
+            // }
         }
     }
 }

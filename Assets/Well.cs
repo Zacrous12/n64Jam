@@ -23,15 +23,19 @@ public class Well : MonoBehaviour
         if(!isActive)
         {
             timeLastActive++;
-            //mr.material.color = new Color(mr.material.color.r, mr.material.color.g, mr.material.color.b, mr.material.color.a - 0.01f);
-        } else {
-            //mr.material.color = new Color(mr.material.color.r, mr.material.color.g, mr.material.color.b, mr.material.color.a + 0.01f);
+            mr.material.color = new Color(mr.material.color.r, mr.material.color.g, mr.material.color.b, mr.material.color.a - 0.01f);
+        } 
+        else if(mr.material.color.a < 1)
+        {
+            mr.material.color = new Color(mr.material.color.r, mr.material.color.g, mr.material.color.b, mr.material.color.a + 0.01f);
         }
-        if(timeLastActive > 200)
+        if(timeLastActive > 350)
         {
             isActive = true;
             timeLastActive = 0;
         }
+        if(mr.material.color.a <= 0) mr.SetActive(false);
+        else mr.SetActive(true);
 
         transform.position = startPos;
         transform.RotateAround(Vector3.zero, Vector3.up, 20 * Time.deltaTime);
@@ -41,10 +45,16 @@ public class Well : MonoBehaviour
     public void Deactivate(){
         isActive = false;
         fade = true;
+        //StartCoroutine(Fade());
     }
 
     public void Activate(){
         isActive = true;
         fade = false;
+    }
+
+    IEnumerator Fade()
+    {
+        yield return new WaitForSeconds(2);
     }
 }

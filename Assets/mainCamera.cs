@@ -19,7 +19,6 @@ public class mainCamera : MonoBehaviour
         transform.position = new Vector3(player.transform.position.x, player.transform.position.y + 5, -7);
     }
 
-    // Update is called once per frame
     void FixedUpdate()
     {
         // Make the camera lerp less jittery

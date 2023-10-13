@@ -8,12 +8,14 @@ public class playerController : MonoBehaviour
     public float speed;
     public float dashSpeed;
     public float maxSpeed;
+    public float slowRate;
     public int dashTimer;
     public float dodgeSpeed;
     private int dodgeTimer;
     public float jumpForce;
     public int jumpTimer;
-    private float jumpModifier;
+    public float jumpModifier;
+    public float jumpApexTime;
     public float airDrift;
     public float maxAirDrift;
     public float wellDrift;
@@ -36,10 +38,12 @@ public class playerController : MonoBehaviour
     private bool isCrouching;
     private bool isDodging;
     private bool inWell;
+    private bool isInvincible;
     private bool facingRight;
     public bool isHoldDown;
     private bool outOfWell;
     private bool nearWell;
+    private bool jumpApex;
 
     private Animator anim;
 
@@ -80,15 +84,17 @@ public class playerController : MonoBehaviour
         if(isGrounded)
         {
             rb.AddForce(new Vector3(0, jumpForce, 0), ForceMode.Impulse);
+            StartCoroutine(Jump());
         }
         else
         {
             if(extraJumpsValue > 0)
             {
-                rb.velocity = new Vector3(rb.velocity.x, jumpForce * jumpModifier, 0);
+                rb.AddForce(new Vector3(0, jumpForce * jumpModifier, 0), ForceMode.Impulse);
                 extraJumpsValue--;
                 jumpModifier *= .8f;
             }
+            StartCoroutine(Jump());
         }
         isJumping = true;
     }
@@ -126,6 +132,13 @@ public class playerController : MonoBehaviour
         rb.constraints = RigidbodyConstraints.FreezePosition;
         yield return new WaitForSeconds(0.4f);
         rb.constraints = RigidbodyConstraints.FreezePositionZ | RigidbodyConstraints.FreezeRotation;
+    }
+
+    IEnumerator Jump()
+    {
+        jumpApex = false;
+        yield return new WaitForSeconds(jumpApexTime);
+        jumpApex = true;
     }
 
     private void HandleDodge()
@@ -228,10 +241,17 @@ public class playerController : MonoBehaviour
         if(isGrounded == true)
         {
             extraJumpsValue = extraJumps;
-            jumpModifier = .75f;
+            jumpModifier = .95f;
             gravTimer = 0;
             isDodging = false;
             outOfWell = true; // change where this is
+        } 
+        else if(jumpApex) 
+        {
+            rb.AddForce(new Vector3(0,-50,0),ForceMode.Acceleration);
+        }
+        else{
+            rb.AddForce(new Vector3(0,5,0));
         }
 
         if(nearWell) airDrift = wellDrift;
@@ -284,13 +304,21 @@ public class playerController : MonoBehaviour
         {
             HandleMove(false);
         }
+        else if(facingRight && rb.velocity.x > 0)
+        {
+            rb.velocity = new Vector3(rb.velocity.x - slowRate, rb.velocity.y, 0);
+        }
+        else if(!facingRight && rb.velocity.x < 0)
+        {
+            rb.velocity = new Vector3(rb.velocity.x + slowRate, rb.velocity.y, 0);
+        }
 
         if(Input.GetKeyDown(KeyCode.D)) {
-            if(facingRight == false) psObj.Rotate(0,180,0);
+            if(!facingRight) psObj.Rotate(0,180,0);
             facingRight = true;
         }
         else if(Input.GetKeyDown(KeyCode.A)) {
-            if(facingRight == true) psObj.Rotate(0,-180,0);
+            if(facingRight) psObj.Rotate(0,-180,0);
             facingRight = false;
         }
 
@@ -351,6 +379,15 @@ public class playerController : MonoBehaviour
             //         break;
             //     }
             // }
+        }
+    }
+
+    private void OnCollisionEnter(Collision obj)
+    {
+        
+        if(obj.collider.tag == "Death" || obj.collider.tag == "Enemy")
+        {
+            Debug.Log("Dead");
         }
     }
 }

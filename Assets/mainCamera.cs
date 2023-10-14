@@ -14,7 +14,7 @@ public class mainCamera : MonoBehaviour
     {
         numChars = 2;
         currentChar = 0;
-        player = GameObject.Find("Player");
+        player = GameObject.Find("Fastfaller");
         smoothing = 0.015f;
         transform.position = new Vector3(player.transform.position.x, player.transform.position.y + 5, -7);
     }

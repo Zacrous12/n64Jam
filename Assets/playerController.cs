@@ -16,6 +16,7 @@ public class playerController : MonoBehaviour
     public int jumpTimer;
     public float jumpModifier;
     public float jumpApexTime;
+    public float wallJumpForce;
     public float airDrift;
     public float maxAirDrift;
     public float wellDrift;
@@ -76,8 +77,33 @@ public class playerController : MonoBehaviour
             else rb.velocity = (new Vector3(-speed, rb.velocity.y, 0));
         }
         else {
-            if(right) rb.velocity = new Vector3(airDrift, rb.velocity.y, rb.velocity.z);
-            else rb.velocity = new Vector3(-airDrift, rb.velocity.y, rb.velocity.z);
+            if(canWallJump){
+                float y;
+                if(rb.velocity.y < 0) y = 0;
+                else y = rb.velocity.y;
+                if(wallRight && !right)
+                {
+                    rb.AddForce(new Vector3(-airDrift, y, 0));
+                }
+                else if(wallRight && right)
+                {
+                    rb.velocity = new Vector3(rb.velocity.x, y, 0);
+                }
+                else if(!wallRight && !right)
+                {
+                    rb.velocity = new Vector3(rb.velocity.x, y, 0);
+                }
+                else if(!wallRight && right)
+                {
+                    rb.AddForce(new Vector3(-airDrift, y, 0));
+                }
+            }
+
+            else
+            {
+                if(right) rb.velocity = new Vector3(airDrift, rb.velocity.y, rb.velocity.z);
+                else rb.velocity = new Vector3(-airDrift, rb.velocity.y, rb.velocity.z);
+            }
         }
     }
 
@@ -93,6 +119,7 @@ public class playerController : MonoBehaviour
         {
             if(extraJumpsValue > 0)
             {
+                rb.velocity = new Vector3(rb.velocity.x, 0, 0);
                 rb.AddForce(new Vector3(0, jumpForce * jumpModifier, 0), ForceMode.Impulse);
                 extraJumpsValue--;
                 jumpModifier *= .8f;
@@ -105,10 +132,10 @@ public class playerController : MonoBehaviour
     private void WallJumpStarted()
     {
         if(isGrounded || !canWallJump) return;
-        if(wallRight) rb.AddForce(new Vector3(-jumpForce * 2, jumpForce, 0));
-        else rb.AddForce(new Vector3(jumpForce * 2, jumpForce, 0));
         canWallJump = false;
         ps.Play();
+        if(wallRight) rb.AddForce(new Vector3(-jumpForce * .5f, jumpForce, 0), ForceMode.Impulse);
+        else rb.AddForce(new Vector3(jumpForce * .5f, jumpForce, 0), ForceMode.Impulse);
         StartCoroutine(WallJump());
         isJumping = true;
     }
@@ -120,7 +147,7 @@ public class playerController : MonoBehaviour
         {
             transform.localScale = new Vector3(1, .5f, 1);
             transform.position = new Vector3(transform.position.x, transform.position.y - .25f, transform.position.z);
-            rb.AddForce(new Vector3(0, -.75f, 0), ForceMode.Impulse);
+            rb.AddForce(new Vector3(0, -.25f, 0), ForceMode.Impulse);
             isCrouching = true;
         }
         else
@@ -157,6 +184,13 @@ public class playerController : MonoBehaviour
 
     IEnumerator WallJump()
     {
+        for (int i = 0; i < 20; i++)
+        {
+            if(wallRight) rb.AddForce(new Vector3(-jumpForce * 0.5f, wallJumpForce, 0));
+            else rb.AddForce(new Vector3(jumpForce * 0.5f, wallJumpForce, 0));
+            yield return new WaitForSeconds(.012f);
+        }
+        canWallJump = false;
         jumpApex = false;
         yield return new WaitForSeconds(jumpApexTime * .75f);
         jumpApex = true;
@@ -174,12 +208,15 @@ public class playerController : MonoBehaviour
             // TODO: Make invincible
             if(Input.GetKey(KeyCode.D))
             {
-                rb.velocity += (new Vector3(dodgeSpeed, 0, 0));
+                rb.velocity = (new Vector3(0, 0, 0));
+                rb.AddForce(new Vector3(dodgeSpeed, 0, 0), ForceMode.Impulse);
                 if(Input.GetKey(KeyCode.W)) rb.velocity += (new Vector3(dodgeSpeed, dodgeSpeed, 0));
                 else if(Input.GetKey(KeyCode.S)) rb.velocity += (new Vector3(dodgeSpeed, -dodgeSpeed, 0));
             }
             else if(Input.GetKey(KeyCode.A))
             {
+                rb.velocity = (new Vector3(0, 0, 0));
+                rb.AddForce(new Vector3(-dodgeSpeed, 0, 0), ForceMode.Impulse);
                 rb.velocity += (new Vector3(-dodgeSpeed, 0, 0));
                 if(Input.GetKey(KeyCode.W)) rb.velocity += (new Vector3(-dodgeSpeed, dodgeSpeed, 0));
                 else if(Input.GetKey(KeyCode.S)) rb.velocity += (new Vector3(-dodgeSpeed, -dodgeSpeed, 0));
@@ -233,7 +270,7 @@ public class playerController : MonoBehaviour
         if(isJumping)
         {
             jumpTimer++;
-            if(jumpTimer > 20)
+            if(jumpTimer > 10)
             {
                 isJumping = false;
                 jumpTimer = 0;
@@ -263,7 +300,7 @@ public class playerController : MonoBehaviour
         if(isGrounded == true)
         {
             extraJumpsValue = extraJumps;
-            jumpModifier = .95f;
+            jumpModifier = .65f;
             gravTimer = 0;
             isDodging = false;
             canWallJump = false;
@@ -370,7 +407,7 @@ public class playerController : MonoBehaviour
 
         if(Input.GetKey(KeyCode.J))
         {
-            HandleDodge();
+            // HandleDodge();
         }
 
         if(Input.GetKey(KeyCode.K))
@@ -380,7 +417,7 @@ public class playerController : MonoBehaviour
 
         if(Input.GetKeyDown(KeyCode.U))
         {
-            if(this.gameObject.name == "Player" || this.gameObject.name == "Player(Clone)")
+            if(this.gameObject.name == "Fastfaller" || this.gameObject.name == "Fastfaller(Clone)")
             {
                 Instantiate(Resources.Load<GameObject>("Ghost"), transform.position, transform.rotation);
                 cam.player = GameObject.Find("Ghost(Clone)");
@@ -388,7 +425,7 @@ public class playerController : MonoBehaviour
             else
             {
                 Instantiate(Resources.Load<GameObject>("Fastfaller"), transform.position, transform.rotation);
-                cam.player = GameObject.Find("Player(Clone)");
+                cam.player = GameObject.Find("Fastfaller(Clone)");
             }
             Destroy(this.gameObject);
 
@@ -417,13 +454,12 @@ public class playerController : MonoBehaviour
 
         if(obj.collider.tag == "Checkpoint")
         {
-            Debug.Log("Checkpoint");
             spawn = obj.gameObject.transform.position;
-            if(this.gameObject.name == "Ghost" || this.gameObject.name == "Ghost(Clone)")
-            {
-                Instantiate(Resources.Load<GameObject>("Fastfaller"), transform.position, transform.rotation);
-                cam.player = GameObject.Find("Player(Clone)");
-            } 
+            // if(this.gameObject.name == "Ghost" || this.gameObject.name == "Ghost(Clone)")
+            // {
+            //     Instantiate(Resources.Load<GameObject>("Fastfaller"), transform.position, transform.rotation);
+            //     cam.player = GameObject.Find("Player(Clone)");
+            // } 
         }
     }
 

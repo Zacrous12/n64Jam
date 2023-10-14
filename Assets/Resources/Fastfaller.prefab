@@ -10,7 +10,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 736612728364446100, guid: 32302a091a5f4c343bc2e27af7627e8e, type: 3}
       propertyPath: m_Name
-      value: Player Variant
+      value: Fastfaller
       objectReference: {fileID: 0}
     - target: {fileID: 736612728364446100, guid: 32302a091a5f4c343bc2e27af7627e8e, type: 3}
       propertyPath: m_IsActive
@@ -62,7 +62,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5097824332865093470, guid: 32302a091a5f4c343bc2e27af7627e8e, type: 3}
       propertyPath: speed
-      value: 3.9599957
+      value: 7.999994
       objectReference: {fileID: 0}
     - target: {fileID: 5097824332865093470, guid: 32302a091a5f4c343bc2e27af7627e8e, type: 3}
       propertyPath: gravity
@@ -73,8 +73,16 @@ PrefabInstance:
       value: 8.04
       objectReference: {fileID: 0}
     - target: {fileID: 5097824332865093470, guid: 32302a091a5f4c343bc2e27af7627e8e, type: 3}
+      propertyPath: maxSpeed
+      value: 8
+      objectReference: {fileID: 0}
+    - target: {fileID: 5097824332865093470, guid: 32302a091a5f4c343bc2e27af7627e8e, type: 3}
+      propertyPath: slowRate
+      value: 0.03
+      objectReference: {fileID: 0}
+    - target: {fileID: 5097824332865093470, guid: 32302a091a5f4c343bc2e27af7627e8e, type: 3}
       propertyPath: dashSpeed
-      value: 10.26
+      value: 9.7
       objectReference: {fileID: 0}
     - target: {fileID: 5097824332865093470, guid: 32302a091a5f4c343bc2e27af7627e8e, type: 3}
       propertyPath: dashTimer

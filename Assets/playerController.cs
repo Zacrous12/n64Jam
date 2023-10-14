@@ -29,6 +29,7 @@ public class playerController : MonoBehaviour
     private ParticleSystem trans;
     private Transform psObj;
     private mainCamera cam;
+    private Vector3 spawn;
 
     private bool isGrounded;
     private bool isJumping;
@@ -44,6 +45,8 @@ public class playerController : MonoBehaviour
     private bool outOfWell;
     private bool nearWell;
     private bool jumpApex;
+    private bool canWallJump;
+    private bool wallRight;
 
     private Animator anim;
 
@@ -99,6 +102,17 @@ public class playerController : MonoBehaviour
         isJumping = true;
     }
 
+    private void WallJumpStarted()
+    {
+        if(isGrounded || !canWallJump) return;
+        if(wallRight) rb.AddForce(new Vector3(-jumpForce * 2, jumpForce, 0));
+        else rb.AddForce(new Vector3(jumpForce * 2, jumpForce, 0));
+        canWallJump = false;
+        ps.Play();
+        StartCoroutine(WallJump());
+        isJumping = true;
+    }
+
     private void HandleDuck()
     {
         isHoldDown = true;
@@ -141,6 +155,13 @@ public class playerController : MonoBehaviour
         jumpApex = true;
     }
 
+    IEnumerator WallJump()
+    {
+        jumpApex = false;
+        yield return new WaitForSeconds(jumpApexTime * .75f);
+        jumpApex = true;
+    }
+
     private void HandleDodge()
     {
         if(isGrounded)
@@ -153,15 +174,15 @@ public class playerController : MonoBehaviour
             // TODO: Make invincible
             if(Input.GetKey(KeyCode.D))
             {
+                rb.velocity += (new Vector3(dodgeSpeed, 0, 0));
                 if(Input.GetKey(KeyCode.W)) rb.velocity += (new Vector3(dodgeSpeed, dodgeSpeed, 0));
                 else if(Input.GetKey(KeyCode.S)) rb.velocity += (new Vector3(dodgeSpeed, -dodgeSpeed, 0));
-                else rb.velocity += (new Vector3(dodgeSpeed * 2, 0, 0));
             }
             else if(Input.GetKey(KeyCode.A))
             {
+                rb.velocity += (new Vector3(-dodgeSpeed, 0, 0));
                 if(Input.GetKey(KeyCode.W)) rb.velocity += (new Vector3(-dodgeSpeed, dodgeSpeed, 0));
                 else if(Input.GetKey(KeyCode.S)) rb.velocity += (new Vector3(-dodgeSpeed, -dodgeSpeed, 0));
-                else rb.velocity += (new Vector3(-dodgeSpeed * 2, 0, 0));
             }
             else if(Input.GetKey(KeyCode.W))
             {
@@ -196,6 +217,7 @@ public class playerController : MonoBehaviour
         outOfWell = true;
         nearWell = false;
         wells = GameObject.FindGameObjectsWithTag("Well");
+        spawn = transform.position;
     }
 
     void Start()
@@ -244,6 +266,7 @@ public class playerController : MonoBehaviour
             jumpModifier = .95f;
             gravTimer = 0;
             isDodging = false;
+            canWallJump = false;
             outOfWell = true; // change where this is
         } 
         else if(jumpApex) 
@@ -328,9 +351,10 @@ public class playerController : MonoBehaviour
             isDashing = true;
         }
 
-        if(Input.GetKey(KeyCode.Space))
+        if(Input.GetKeyDown(KeyCode.Space))
         {
-            JumpStarted();
+            if(canWallJump) WallJumpStarted();
+            else JumpStarted();
         }
 
         if(Input.GetKey(KeyCode.S))
@@ -363,7 +387,7 @@ public class playerController : MonoBehaviour
             } 
             else
             {
-                Instantiate(Resources.Load<GameObject>("Player"), transform.position, transform.rotation);
+                Instantiate(Resources.Load<GameObject>("Fastfaller"), transform.position, transform.rotation);
                 cam.player = GameObject.Find("Player(Clone)");
             }
             Destroy(this.gameObject);
@@ -385,9 +409,31 @@ public class playerController : MonoBehaviour
     private void OnCollisionEnter(Collision obj)
     {
         
-        if(obj.collider.tag == "Death" || obj.collider.tag == "Enemy")
+        if(obj.collider.tag == "Death" || obj.collider.tag == "Enemy") 
         {
-            Debug.Log("Dead");
+            transform.position = spawn;
+            rb.velocity = new Vector3(0, 0, 0);
         }
+
+        if(obj.collider.tag == "Checkpoint")
+        {
+            Debug.Log("Checkpoint");
+            spawn = obj.gameObject.transform.position;
+            if(this.gameObject.name == "Ghost" || this.gameObject.name == "Ghost(Clone)")
+            {
+                Instantiate(Resources.Load<GameObject>("Fastfaller"), transform.position, transform.rotation);
+                cam.player = GameObject.Find("Player(Clone)");
+            } 
+        }
+    }
+
+    private void OnCollisionStay(Collision obj)
+    {
+        if(obj.collider.tag == "Wall")
+        {
+            canWallJump = true;
+            if(obj.collider.transform.position.x > transform.position.x) wallRight = true;
+            else wallRight = false;
+        } 
     }
 }

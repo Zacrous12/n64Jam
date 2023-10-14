@@ -8,6 +8,8 @@ TagManager:
   - Well
   - Death
   - Enemy
+  - Checkpoint
+  - Wall
   layers:
   - Default
   - TransparentFX

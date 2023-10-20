@@ -35,6 +35,7 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 5401367447145134819}
+  - {fileID: 7269770296293839837}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!33 &5449248923652629587
@@ -140,11 +141,15 @@ MonoBehaviour:
   maxWellGravity: 0.1
   gravTimer: 0
   activeTimer: 92
+  wallSlidingSpeed: 0
   isHoldDown: 0
   checkRadius: 1.03
-  whatIsGround:
+  groundLayer:
     serializedVersion: 2
-    m_Bits: 8
+    m_Bits: 0
+  wallLayer:
+    serializedVersion: 2
+    m_Bits: 0
   extraJumps: 3
   distFromWell: 3.49
   wellGravity: 0.1
@@ -5003,3 +5008,34 @@ ParticleSystemRenderer:
   m_MeshWeighting2: 1
   m_MeshWeighting3: 1
   m_MaskInteraction: 0
+--- !u!1 &6789335108569788725
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 7269770296293839837}
+  m_Layer: 0
+  m_Name: wallCheck
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &7269770296293839837
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6789335108569788725}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0.321, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1883378125953969673}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}

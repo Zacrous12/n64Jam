@@ -24,6 +24,12 @@ public class playerController : MonoBehaviour
     public float maxWellGravity;
     public int gravTimer;
     public int activeTimer;
+    public float wallSlidingSpeed;
+    private float wallJumpingDirection;
+    private float wallJumpingTime = 0.2f;
+    private float wallJumpingCounter;
+    private float wallJumpingDuration = 0.4f;
+    private Vector2 wallJumpingPower = new Vector2(8f, 16f);
 
     private Rigidbody rb;
     private ParticleSystem ps;
@@ -31,6 +37,7 @@ public class playerController : MonoBehaviour
     private Transform psObj;
     private mainCamera cam;
     private Vector3 spawn;
+    private Transform wallCheck;
 
     private bool isGrounded;
     private bool isJumping;
@@ -46,13 +53,16 @@ public class playerController : MonoBehaviour
     private bool outOfWell;
     private bool nearWell;
     private bool jumpApex;
-    private bool canWallJump;
+    private bool isWallJump;
+    private bool isWallSliding;
     private bool wallRight;
+    private bool horizontal; 
 
     private Animator anim;
 
     public float checkRadius;
-    public LayerMask whatIsGround;
+    public LayerMask groundLayer;
+    public LayerMask wallLayer;
 
     public int extraJumps;
     private int extraJumpsValue;
@@ -64,6 +74,7 @@ public class playerController : MonoBehaviour
 
     private void HandleMove(bool right)
     {
+        horizontal = true;
         if(isGrounded){
             if(!isDashing && readyToDash){
                 if(right) rb.velocity = (new Vector3(dashSpeed, rb.velocity.y, 0));
@@ -77,7 +88,7 @@ public class playerController : MonoBehaviour
             else rb.velocity = (new Vector3(-speed, rb.velocity.y, 0));
         }
         else {
-            if(canWallJump){
+            if(isWallJump){
                 float y;
                 if(rb.velocity.y < 0) y = 0;
                 else y = rb.velocity.y;
@@ -131,12 +142,12 @@ public class playerController : MonoBehaviour
 
     private void WallJumpStarted()
     {
-        if(isGrounded || !canWallJump) return;
-        canWallJump = false;
+        if(isGrounded || !isWallJump) return;
+        isWallJump = false;
         ps.Play();
         if(wallRight) rb.AddForce(new Vector3(-jumpForce * .5f, jumpForce, 0), ForceMode.Impulse);
         else rb.AddForce(new Vector3(jumpForce * .5f, jumpForce, 0), ForceMode.Impulse);
-        StartCoroutine(WallJump());
+        WallJump();
         isJumping = true;
     }
 
@@ -166,8 +177,8 @@ public class playerController : MonoBehaviour
         RaycastHit hit;
         bool part = false;
         yield return new WaitForSeconds(0.1f);
-        if(Physics.Raycast(rb.position + new Vector3(0,-2.0f,0), transform.TransformDirection(Vector3.down), out hit, checkRadius, whatIsGround)) part = true;
-        if(Physics.Raycast(rb.position + new Vector3(0,-1.0f,0), transform.TransformDirection(Vector3.up), out hit, checkRadius * 2, whatIsGround) || (rb.position.y < 1.0f)) part = true;
+        if(Physics.Raycast(rb.position + new Vector3(0,-2.0f,0), transform.TransformDirection(Vector3.down), out hit, checkRadius, groundLayer)) part = true;
+        if(Physics.Raycast(rb.position + new Vector3(0,-1.0f,0), transform.TransformDirection(Vector3.up), out hit, checkRadius * 2, groundLayer) || (rb.position.y < 1.0f)) part = true;
         if(part) yield break;
         rb.velocity = new Vector3(0, 0, 0);
         rb.constraints = RigidbodyConstraints.FreezePosition;
@@ -182,18 +193,74 @@ public class playerController : MonoBehaviour
         jumpApex = true;
     }
 
-    IEnumerator WallJump()
+    // IEnumerator WallJump()
+    // {
+    //     for (int i = 0; i < 20; i++)
+    //     {
+    //         if(wallRight) rb.AddForce(new Vector3(-jumpForce * 0.5f, wallJumpForce, 0));
+    //         else rb.AddForce(new Vector3(jumpForce * 0.5f, wallJumpForce, 0));
+    //         yield return new WaitForSeconds(.012f);
+    //     }
+    //     isWallJump = false;
+    //     jumpApex = false;
+    //     yield return new WaitForSeconds(jumpApexTime * .75f);
+    //     jumpApex = true;
+    // }
+
+    private bool IsWalled()
     {
-        for (int i = 0; i < 20; i++)
+        return Physics2D.OverlapCircle(wallCheck.position, 0.2f, wallLayer);
+    }
+
+    private void WallSlide()
+    {
+        if (IsWalled() && !isGrounded && horizontal)
         {
-            if(wallRight) rb.AddForce(new Vector3(-jumpForce * 0.5f, wallJumpForce, 0));
-            else rb.AddForce(new Vector3(jumpForce * 0.5f, wallJumpForce, 0));
-            yield return new WaitForSeconds(.012f);
+            isWallSliding = true;
+            rb.velocity = new Vector2(rb.velocity.x, Mathf.Clamp(rb.velocity.y, -wallSlidingSpeed, float.MaxValue));
         }
-        canWallJump = false;
-        jumpApex = false;
-        yield return new WaitForSeconds(jumpApexTime * .75f);
-        jumpApex = true;
+        else
+        {
+            isWallSliding = false;
+        }
+    }
+
+    private void WallJump()
+    {
+        if (isWallSliding)
+        {
+            isWallJump = false;
+            wallJumpingDirection = -transform.localScale.x;
+            wallJumpingCounter = wallJumpingTime;
+
+            CancelInvoke(nameof(StopWallJumping));
+        }
+        else
+        {
+            wallJumpingCounter -= Time.deltaTime;
+        }
+
+        if (Input.GetButtonDown("Jump") && wallJumpingCounter > 0f)
+        {
+            isWallJump = true;
+            rb.velocity = new Vector2(wallJumpingDirection * wallJumpingPower.x, wallJumpingPower.y);
+            wallJumpingCounter = 0f;
+
+            if (transform.localScale.x != wallJumpingDirection)
+            {
+                facingRight = !facingRight;
+                Vector3 localScale = transform.localScale;
+                localScale.x *= -1f;
+                transform.localScale = localScale;
+            }
+
+            Invoke(nameof(StopWallJumping), wallJumpingDuration);
+        }
+    }
+
+    private void StopWallJumping()
+    {
+        isWallJump = false;
     }
 
     private void HandleDodge()
@@ -237,7 +304,7 @@ public class playerController : MonoBehaviour
 
     void Awake()
     {
-        whatIsGround = LayerMask.GetMask("Ground");
+        groundLayer = LayerMask.GetMask("Ground");
 
         trans = GameObject.Find("trans").GetComponent<ParticleSystem>();
         ps = GetComponentInChildren<ParticleSystem>();
@@ -255,6 +322,7 @@ public class playerController : MonoBehaviour
         nearWell = false;
         wells = GameObject.FindGameObjectsWithTag("Well");
         spawn = transform.position;
+        wallCheck = GameObject.Find("wallCheck").transform;
     }
 
     void Start()
@@ -265,7 +333,7 @@ public class playerController : MonoBehaviour
     void FixedUpdate()
     {
         RaycastHit hit;
-        isGrounded = (Physics.Raycast(rb.position, transform.TransformDirection(Vector3.down), out hit, checkRadius, whatIsGround));
+        isGrounded = (Physics.Raycast(rb.position, transform.TransformDirection(Vector3.down), out hit, checkRadius, groundLayer));
 
         if(isJumping)
         {
@@ -303,7 +371,7 @@ public class playerController : MonoBehaviour
             jumpModifier = .65f;
             gravTimer = 0;
             isDodging = false;
-            canWallJump = false;
+            isWallJump = false;
             outOfWell = true; // change where this is
         } 
         else if(jumpApex) 
@@ -364,11 +432,13 @@ public class playerController : MonoBehaviour
         {
             HandleMove(false);
         }
-        else if(facingRight && rb.velocity.x > 0)
+        else horizontal = false;
+
+        if(facingRight && rb.velocity.x > 0 && !horizontal)
         {
             rb.velocity = new Vector3(rb.velocity.x - slowRate, rb.velocity.y, 0);
         }
-        else if(!facingRight && rb.velocity.x < 0)
+        else if(!facingRight && rb.velocity.x < 0 && !horizontal)
         {
             rb.velocity = new Vector3(rb.velocity.x + slowRate, rb.velocity.y, 0);
         }
@@ -376,11 +446,17 @@ public class playerController : MonoBehaviour
         if(Input.GetKeyDown(KeyCode.D)) {
             if(!facingRight) psObj.Rotate(0,180,0);
             facingRight = true;
+            // Vector3 localScale = transform.localScale;
+            // localScale.x *= -1f;
+            // transform.localScale = localScale;
         }
         else if(Input.GetKeyDown(KeyCode.A)) {
             if(facingRight) psObj.Rotate(0,-180,0);
             facingRight = false;
-        }
+            // Vector3 localScale = transform.localScale;
+            // localScale.x *= -1f;
+            // transform.localScale = localScale;
+        } 
 
         if(Input.GetKeyUp(KeyCode.D) || Input.GetKeyUp(KeyCode.A))
         {
@@ -390,9 +466,12 @@ public class playerController : MonoBehaviour
 
         if(Input.GetKeyDown(KeyCode.Space))
         {
-            if(canWallJump) WallJumpStarted();
+            if(isWallJump) WallJumpStarted();
             else JumpStarted();
         }
+
+        WallSlide();
+        WallJump();
 
         if(Input.GetKey(KeyCode.S))
         {
@@ -428,19 +507,9 @@ public class playerController : MonoBehaviour
                 cam.player = GameObject.Find("Fastfaller(Clone)");
             }
             Destroy(this.gameObject);
-
-            // When we have multiple characters
-            // for(int i = 0; i < charList.Length; i++)
-            // {
-            //     if(charList[i].active == true)
-            //     {
-            //         charList[i].SetActive(false);
-            //         if(i == charList.Length - 1) charList[0].SetActive(true);
-            //         else charList[i + 1].SetActive(true);
-            //         break;
-            //     }
-            // }
         }
+
+        //if(!isWallJump) ;
     }
 
     private void OnCollisionEnter(Collision obj)
@@ -467,7 +536,7 @@ public class playerController : MonoBehaviour
     {
         if(obj.collider.tag == "Wall")
         {
-            canWallJump = true;
+            isWallJump = true;
             if(obj.collider.transform.position.x > transform.position.x) wallRight = true;
             else wallRight = false;
         } 
